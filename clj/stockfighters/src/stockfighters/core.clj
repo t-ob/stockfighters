@@ -5,40 +5,42 @@
 
 (def api-url "https://api.stockfighter.io/ob/api")
 
-(def api-key "ADDME")
-
-#_@(http/post "https://api.stockfighter.io/gm/instances/3506/restart"
-              {:headers {"X-Starfighter-Authorization" api-key}})
+(defn callback [resp]
+  (-> resp
+      :body
+      (json/parse-string true)))
 
 
 (defn heartbeat []
   (let [endpoint (str (url/url api-url "heartbeat"))]
     (http/get endpoint)))
 
-(defn exchange-heartbeat [exchange]
-  (let [endpoint (str (url/url api-url "venues" exchange "heartbeat"))]
+(defn venue-heartbeat [venue]
+  (let [endpoint (str (url/url api-url "venues" venue "heartbeat"))]
     (http/get endpoint
               {}
-              (fn [resp]
-                (-> resp
-                    (update-in [:body] json/parse-string true))))))
+              callback)))
 
+(defn stocks [venue]
+  (let [endpoint (str (url/url api-url "venues" venue "stocks"))]
+    (http/get endpoint
+              {}
+              callback)))
 
-;; Synchronous
-#_(def foo @(http/get "https://api.stockfighter.io/ob/api/heartbeat"))
+(defn order-book [venue stock]
+  (let [endpoint (str (url/url api-url "venues" venue "stocks" stock))]
+    (http/get endpoint
+              {}
+              callback)))
 
-;; Async
-#_(def bar
-  (let [opts {:start-time (System/currentTimeMillis)}]
-    (http/get "https://api.stockfighter.io/ob/api/heartbeat"
-              opts
-              (fn [{:keys [status headers body error opts]}]
-                (let [{:keys [method url start-time]} opts]
-                  (println method url "status" status "takes time"
-                           (- (System/currentTimeMillis) start-time) "ms"))))))
-
-
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+(defn place-order [api-key venue stock account price qty direction order-type]
+  (let [endpoint (str (url/url api-url "venues" venue "stocks" stock "orders"))]
+    (http/post endpoint
+               {:headers {"X-Starfighter-Authorization" api-key}
+                :query-params {"account" account
+                               "venue" venue
+                               "stock" stock
+                               "qty" qty
+                               "direction" direction
+                               "orderType" order-type}}
+               callback)))
