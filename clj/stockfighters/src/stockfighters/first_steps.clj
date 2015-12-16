@@ -1,22 +1,18 @@
 (ns stockfighters.first-steps
   (:require [stockfighters.gm :as gm]
-            [stockfighters.core :as api]))
+            [stockfighters.api :as api]))
 
-(def api-key "ADDME")
+(def api-key "ADD ME")
 
-#_@(api/stocks "HMWBEX")
-#_@(api/order-book "HMWBEX" "TJIY")
-#_@(api/place-order api-key "HMWBEX" "TJIY"
-                 "HAA35569327"
-                 10
-                 100
-                 "buy"
-                 "market")
-
-
-
-
-
-
-
-
+(defn strategy [account venue]
+  (let [{:keys [symbols]} @(api/stocks venue)
+        [{:keys [sym]} & _] symbols]
+    #_symbol
+    @(api/place-order api-key
+                      {:account account
+                       :venue venue
+                       :symbol sym
+                       :price 10
+                       :qty 100
+                       :direction "buy"
+                       :order-type "market"})))
