@@ -23,29 +23,31 @@
 
 (defn stocks [venue]
   (let [endpoint (str (url/url api-url "venues" venue "stocks"))]
-    (http/get endpoint
-              {}
-              callback)))
+    @(http/get endpoint
+               {}
+               callback)))
 
 (defn order-book [venue stock]
   (let [endpoint (str (url/url api-url "venues" venue "stocks" stock))]
-    (http/get endpoint
-              {}
-              callback)))
+    @(http/get endpoint
+               {}
+               callback)))
 
 (defn place-order [api-key opts]
   (let [{:keys [account venue symbol price qty direction order-type]} opts
-        endpoint (str (url/url api-url "venues" venue "stocks" symbol "orders"))]
-    (prn opts)
-    (http/post endpoint
-               {:headers {"X-Starfighter-Authorization" api-key}
-                :query-params {"account" account
-                               "venue" venue
-                               "symbol" symbol
-                               "qty" qty
-                               "direction" direction
-                               "orderType" order-type}}
-               callback)))
+        endpoint (str (url/url api-url "venues" venue "stocks" symbol "orders"))
+        params {"account" account
+                "venue" venue
+                "symbol" symbol
+                "qty" qty
+                "direction" direction
+                "orderType" order-type}]
+    @(http/post endpoint
+                {:headers {"X-Starfighter-Authorization" api-key
+                           "Content-Type" "application/json"}
+                 :body (json/generate-string params)}
+                callback)))
+
 
 ;; account: "WWS88063421"
 ;; direction: "buy"
