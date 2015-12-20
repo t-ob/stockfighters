@@ -1,9 +1,14 @@
 (ns stockfighters.api
   (:require [org.httpkit.client :as http]
             [cheshire.core :as json]
-            [cemerick.url :as url]))
+            [cemerick.url :as url]
+
+            [aleph.http]
+            [manifold.stream]
+            [clojure.core.async]))
 
 (def api-url "https://api.stockfighter.io/ob/api")
+(def ws-url "https://api.stockfighter.io/ob/api/ws")
 
 (defn callback [resp]
   (-> resp
@@ -48,11 +53,16 @@
                  :body (json/generate-string params)}
                 callback)))
 
+(defn ticker [account venue stock]
+  (let [endpoint (-> (str (url/url ws-url account "venues" venue "tickertape"
+                                   "stocks" stock))
+                     (clojure.string/replace-first "http" "ws"))
+        ws @(aleph.http/websocket-client endpoint)
+        out (clojure.core.async/chan)]
+    (manifold.stream/connect ws out)
+    out))
 
-;; account: "WWS88063421"
-;; direction: "buy"
-;; orderType: "market"
-;; price: 1
-;; qty: 100
-;; symbol: "CRE"
-;; venue: "WFOEX"
+(comment
+  (let [stocks (ticker "BB42524257" "SQPEX" "FDH")]
+    (while true
+      (println (clojure.core.async/<!! stocks)))))
