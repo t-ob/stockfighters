@@ -4,6 +4,7 @@
             [cemerick.url :as url]
 
             [aleph.http]
+            [byte-streams]
             [manifold.stream]
             [clojure.core.async]))
 
@@ -14,6 +15,12 @@
   (-> resp
       :body
       (json/parse-string true)))
+
+
+#_(-> @(aleph.http/get (str api-url "/heartbeat"))
+      :body
+      byte-streams/to-string
+      json/parse-string)
 
 
 (defn heartbeat []
@@ -45,6 +52,7 @@
                 "venue" venue
                 "symbol" symbol
                 "qty" qty
+                "price" price
                 "direction" direction
                 "orderType" order-type}]
     @(http/post endpoint
@@ -58,7 +66,8 @@
                                    "stocks" stock))
                      (clojure.string/replace-first "http" "ws"))
         ws @(aleph.http/websocket-client endpoint)
-        out (clojure.core.async/chan)]
+        out (clojure.core.async/chan 1
+                                     (map json/parse-string))]
     (manifold.stream/connect ws out)
     out))
 
