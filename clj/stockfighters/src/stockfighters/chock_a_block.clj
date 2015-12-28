@@ -46,5 +46,41 @@
         (>! out (str (<! in) "_lol"))))
     out))
 
-
-
+#_(let [
+      account "CMS65877929"
+      venue "YXBEX"
+        sym "FAL"]
+  (let [stocks (api/ticker account venue sym)
+        bids (chan (a/sliding-buffer 1))]
+    (go
+      (loop [n 0]
+        (let [data (<! stocks)
+              ok (get data "ok")
+              quote (get data "quote")
+              ask (get quote "ask")
+              ask-size (get quote "askSize")]
+          (when (= 0 (mod n 50))
+             (println "♥" n))
+          (when ask
+            (>! bids [ask ask-size]))
+          (if ok
+            (recur (inc n))
+            (println data)))))
+    (while true
+      (let [[bid bid-size] (<!! bids)
+            a (int (* 0.7 bid))
+            b (int (* 1.1 bid))
+            c (+ a (rand-int (- b a)))]
+        (println [bid bid-size])
+        (println
+         (api/place-order api-key
+                           {:account account
+                            :venue venue
+                            :symbol sym
+                            :price c
+                            :qty 500
+                            :direction "buy"
+                            :order-type "limit"}))
+        
+        )
+      )))
